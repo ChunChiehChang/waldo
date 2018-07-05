@@ -36,6 +36,5 @@ if [ $stage -le 2 ]; then
     --train-image-size 256 \
     --model model_best.pth.tar \
     --test-data data/dev \
-    --dir $dir
-
+    --dir $dir/segment
 fi

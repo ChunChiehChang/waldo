@@ -15,7 +15,7 @@ dev_split_url=http://www.openslr.org/resources/50/madcat.dev.raw.lineid
 data_splits_dir=data/download/data_splits
 
 mkdir -p data/{train,test,dev}
-mkdir -p data/{train,test,dev}/{img,mask,object_class}
+mkdir -p data/{train,test,dev}/{img,mask,object_class,orig_dim,orig_img}
 
 [ -f ./path.sh ] && . ./path.sh; # source the path.
 

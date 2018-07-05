@@ -91,7 +91,6 @@ def main():
     config = CoreConfig()
     config.num_colors = 3
     data_saver = DataSaver(args.out_dir, config)
-    image_dim_fh = open(os.path.join(args.out_dir,'image_dim.txt'), 'w')
     for line in splits_data:
         base_name = os.path.splitext(os.path.splitext(line.split(' ')[0])[0])[0]
         if prev_base_name != base_name:
@@ -100,10 +99,9 @@ def main():
             if wc_dict is None or not check_writing_condition(wc_dict, base_name):
                 continue
             if madcat_file_path is not None:
-                y, im_height, im_width = get_mask_from_page_image(madcat_file_path, image_file_path, args.max_image_size)
+                y, y_orig, orig_dim = get_mask_from_page_image(madcat_file_path, image_file_path, args.max_image_size)
                 data_saver.write_image(base_name, y)
-                image_dim_fh.write(base_name + ' ' + str(im_height) + ' ' + str(im_width) + '\n')
-
+                data_saver.write_original(base_name, y_orig, orig_dim)
     data_saver.write_index()
 
 if __name__ == '__main__':

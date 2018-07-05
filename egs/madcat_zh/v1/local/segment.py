@@ -89,7 +89,7 @@ def main():
     else:
         print("=> no checkpoint found at '{}'".format(model_path))
 
-    testset = WaldoTestset(args.test_data, args.train_image_size)
+    testset = WaldoDataset(args.test_data, core_config, args.train_image_size, mask=True)
     print('Total samples in the test set: {0}'.format(len(testset)))
 
     dataloader = torch.utils.data.DataLoader(
@@ -112,11 +112,12 @@ def segment(dataloader, segment_dir, model, core_config):
     num_classes = core_config.num_classes
     offset_list = core_config.offsets
 
-    for i, (img, size, id) in enumerate(dataloader):
+    for i, (img, image_with_mask_orig, orig_dim, id) in enumerate(dataloader):
+        if i >= 1:
+            break
         id = id[0]  # tuple to str
         if id + '.png' in exist_ids:
             continue
-        original_height, original_width = size[0].item(), size[1].item()
         with torch.no_grad():
             output = model(img)
             # class_pred = (output[:, :num_classes, :, :] + 0.001) * 0.999
@@ -132,17 +133,31 @@ def segment(dataloader, segment_dir, model, core_config):
                               adj_pred[0].detach().numpy(),
                               num_classes, offset_list,
                               segmenter_opts)
-        mask_pred, object_class = seg.run_segmentation()
-        mask_pred = resize(mask_pred, (original_height, original_width),
-                           order=0, preserve_range=True).astype(int)
-
-        image_with_mask = {}
+        
         img = np.moveaxis(img[0].detach().numpy(), 0, -1)
-        img = resize(img, (original_height, original_width),
-                     preserve_range=True)
+
+        orig_dim = orig_dim[0].numpy() 
+        image_with_mask_orig_numpy = {}
+        img_orig = np.divide(image_with_mask_orig['img'][0].numpy(), 255.0)
+        image_with_mask_orig_numpy['img'] = resize(img_orig, (np.amax(orig_dim), np.amax(orig_dim)),
+            order=0, preserve_range=True)
+        mask_orig = image_with_mask_orig['mask'][0].numpy()
+        image_with_mask_orig_numpy['mask'] = resize(mask_orig, (np.amax(orig_dim), np.amax(orig_dim)),
+            order=0, preserve_range=True).astype(int)
+        image_with_mask_orig_numpy['object_class'] = [x.numpy()[0] for x in image_with_mask_orig['object_class']]
+        visual_mask_orig = visualize_mask(image_with_mask_orig_numpy, core_config)[
+            'img_with_mask']
+        scipy.misc.imsave('{}/{}_orig.png'.format(img_dir, id), visual_mask_orig)
+
+        mask_pred, object_class = seg.run_segmentation()
+        image_with_mask = {}
         image_with_mask['img'] = img
         image_with_mask['mask'] = mask_pred
         image_with_mask['object_class'] = object_class
+        
+        #print(image_with_mask_orig_numpy)
+        #print(image_with_mask)
+
         visual_mask = visualize_mask(image_with_mask, core_config)[
             'img_with_mask']
         scipy.misc.imsave('{}/{}.png'.format(img_dir, id), visual_mask)

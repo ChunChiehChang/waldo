@@ -11,6 +11,7 @@
  be vertically or horizontally aligned).
 """
 
+from PIL import Image, ImageDraw
 import xml.dom.minidom as minidom
 from waldo.data_manipulation import *
 from waldo.core_config import CoreConfig
@@ -34,6 +35,7 @@ def get_mask_from_page_image(madcat_file_path, image_file_name, max_size):
 
     config = CoreConfig()
     num_colors = 3
+    config.num_colors = num_colors
     image_with_objects = {
         'img': im_arr,
         'objects': objects
@@ -65,12 +67,12 @@ def get_mask_from_page_image(madcat_file_path, image_file_name, max_size):
 
     padded_image_with_objects = {
         'img': img_padded,
-        'objects': scaled_image_with_objects['objects']
+        'objects': scaled_image_with_objects['objects'] 
     }
 
     y = convert_to_mask(padded_image_with_objects, config)
-
-    return y, im_height, im_width
+    y_orig = _draw_bounding_box(img, validated_image_with_objects['objects'])
+    return y, np.array(y_orig), np.array([im_height, im_width])
 
 
 def _get_bounding_box(madcat_file_path):
@@ -101,6 +103,11 @@ def _get_bounding_box(madcat_file_path):
         objects.append(object)
     return objects
 
+def _draw_bounding_box(img, bbox):
+    img_draw = ImageDraw.Draw(img)
+    for poly in bbox:
+        img_draw.polygon(poly['polygon'], outline='BLACK')
+    return img
 
 def _validate_and_update_point(pt0, im_width, im_height, pt1=(0, 0)):
     new_point = pt0

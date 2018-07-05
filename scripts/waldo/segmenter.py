@@ -413,7 +413,7 @@ class ObjectSegmenter:
         """
         print("Starting segmentation...")
         n = 0
-        N = 1000000  # max iters -- for experimentation
+        N = 100000000  # max iters -- for experimentation
         target_objs = 0  # for experimentation
         self.verbose = 0
         self.do_debugging = False
@@ -425,7 +425,7 @@ class ObjectSegmenter:
                 self.verbose = 1
             if n > 100:
                 self.verbose = 0
-            if n % 5000 == 0:
+            if n % 1000000 == 0:
                 print("At iteration {}:  max mem: {:0.2f} GB".format(
                     n, resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024 / 1024))
                 self.show_stats()

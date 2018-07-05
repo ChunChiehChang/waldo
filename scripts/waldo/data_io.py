@@ -58,6 +58,15 @@ class DataSaver:
             for id in self.ids:
                 fh.write(id + '\n')
 
+    def write_original(self, name, orig_img, orig_dim):
+        """ This function saves the original image sizes.
+        """
+        filename = self.dir + '/orig_dim/' + name + '.orig_dim.npy'
+        np.save(filename, orig_dim)
+
+        filename = self.dir + '/orig_img/' + name + '.orig_img.npy'
+        np.save(filename, orig_img)
+
     def __validate_name(self, name):
         if name.find(' ') != -1 or name.find('/') != -1:
             raise ValueError(
@@ -97,6 +106,10 @@ class WaldoDataset(Dataset):
                 image_with_mask[suffix] = np.load(filename)
         return image_with_mask
 
+    def __load_orig_dim(self, id):
+        filename = os.path.join(self.dir, 'orig_dim', id + '.orig_dim.npy')
+        return np.load(filename)
+
     def __getitem__(self, index):
         """ This function is called when we use iter (e.g. dataloader) to load data from
             the dataset.
@@ -128,7 +141,9 @@ class WaldoDataset(Dataset):
                          n_classes + n_offsets, :, :])
 
         if self.mask:
-            return img, class_label, bound, image_with_mask['mask']
+            id = self.ids[index]
+            orig_dim = self.__load_orig_dim(id)
+            return img, image_with_mask, orig_dim, id
         else:
             return img, class_label, bound
 
@@ -185,7 +200,7 @@ class WaldoTestset(Dataset):
         img = np.moveaxis(img, -1, 0)
         img_float = img.astype('float32') / 256.0
         img_tensor = torch.from_numpy(img_float)
-        return img_tensor, size, id
+        return img_tensor, id
 
     def __len__(self):
         return len(self.ids)
